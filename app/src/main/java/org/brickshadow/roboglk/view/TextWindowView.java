@@ -21,6 +21,7 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.util.AttributeSet;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.inputmethod.EditorInfo;
 import android.view.inputmethod.InputConnection;
@@ -66,6 +67,7 @@ public abstract class TextWindowView extends TextView {
 
     @Override
     public boolean onKeyDown(int keyCode, KeyEvent event) {
+        Log.i("TextWindowView", "onKeyDown");
       return false;
     }
 

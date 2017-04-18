@@ -48,6 +48,11 @@ int glkunix_startup_code(glkunix_startup_t *data) {
     }
   }
 
+  // previous arg loop ignored arv[0] (started at i=1), see if it argv[0] starts to spell the word 'nitfol'
+  if (data->argv[0][0] == 'n') {
+     found_zgame = 1;
+  }
+
   if (found_zgame) {
     terp_to_use = NITFOL;
     return glkunix_startup_code_nitfol(data);

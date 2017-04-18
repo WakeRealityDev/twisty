@@ -27,6 +27,7 @@ import android.text.Editable;
 import android.text.Selection;
 import android.text.SpannableStringBuilder;
 import android.text.method.TextKeyListener;
+import android.util.Log;
 import android.view.KeyEvent;
 import android.view.View;
 
@@ -82,6 +83,10 @@ public abstract class TextIO {
             
             @Override
             public boolean onKey(View v, int keyCode, KeyEvent event) {
+                if (keyCode == KeyEvent.KEYCODE_BACK) {
+                    Log.i("TextIO", "onKey got KEYCODE_BACK, passing through");
+                    return false;
+                }
                 return onViewKey(v, keyCode, event);
             }
         });

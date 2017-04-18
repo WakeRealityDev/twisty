@@ -34,6 +34,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.HashMap;
 
 import org.brickshadow.roboglk.Glk;
 import org.brickshadow.roboglk.GlkFactory;
@@ -88,6 +89,8 @@ import android.widget.TextView;
 import android.widget.RadioGroup.OnCheckedChangeListener;
 
 import com.jakewharton.processphoenix.ProcessPhoenix;
+import com.wakereality.ifengineprovider.AppInfoSpot;
+import com.wakereality.thunderstrike.dataexchange.EngineConst;
 
 public class Twisty extends Activity {
     private static String TAG = "Twisty";
@@ -141,7 +144,11 @@ public class Twisty extends Activity {
     // A persistent map of button-ids to zgames found on the sdcard (absolute paths)
     private SparseArray<String> zgame_paths = new SparseArray<String>();
     private SparseArray<String> builtinGames = new SparseArray<String>();
+    private HashMap<String, Integer> builtInGamesHashSHA256 = new HashMap<>();
 
+    // Engine launcher interface
+    private boolean exitAppAfterEngine = false;
+    private int terpEngineCode = EngineConst.ENGINE_UNKNOWN;
 
     static class DialogHandler extends Handler {
         final WeakReference<Twisty> twisty;
@@ -207,7 +214,13 @@ public class Twisty extends Activity {
         builtinGames.put(R.raw.rover, "rover.gblorb");
         builtinGames.put(R.raw.glulxercise, "glulxercise.ulx");
         builtinGames.put(R.raw.windowtest, "windowtest.ulx");
-
+        builtinGames.put(R.raw.anchor, "anchor.z8");
+        builtInGamesHashSHA256.clear();
+        builtInGamesHashSHA256.put("71182381578dc344d3a71ead8454c6592c2d2768c56bdc5bdaae35d885ba59eb", R.raw.violet);
+        builtInGamesHashSHA256.put("3561294ef94653f9fad8b6c487ff288ea166289f6b23dd2610175272e430649f", R.raw.rover);
+        builtInGamesHashSHA256.put("c464fa399f17ba34098b9f5ed7dd924733239cf8652ccadb434f0d08fe9c2c43", R.raw.glulxercise);
+        builtInGamesHashSHA256.put("e365bbd2e33e0c36028e96d6441a1cfef8e526909f5330cf7db8f88e8c1403e7", R.raw.windowtest);
+        builtInGamesHashSHA256.put("c2f28a4ddd9367c260946926a33c73a4b0cc38b1f327646cc1202182a28a10ff", R.raw.anchor);
         UISync.setInstance(this);
 
         // An imageview to show the twisty icon
@@ -248,7 +261,20 @@ public class Twisty extends Activity {
             }
         }
         else {
-            printWelcomeMessage();
+            String filePath = this.getIntent().getStringExtra("filepath");
+            if (filePath != null) {
+                exitAppAfterEngine = true;
+                if (! AppInfoSpot.appLaunchFromReceiver) {
+                    Log.e(TAG, "[startTerp] automatic restart after crash detected, aborting launch, filepath " + filePath);
+                    finish();
+                    return;
+                }
+                terpEngineCode = this.getIntent().getIntExtra("enginecode", EngineConst.ENGINE_UNKNOWN);
+                Log.i(TAG, "[startTerp] filePath " + filePath + " engineCode " + terpEngineCode);
+                startTerp(filePath);
+            } else {
+                printWelcomeMessage();
+            }
         }
 
         // Ensure we can write story files and save games to external storage
@@ -440,10 +466,26 @@ public class Twisty extends Activity {
                    //String[] args = new String[] {"nitfol", gamePath};
                            // cursesFile.getAbsolutePath()};
                    String[] args = new String[] {"git", gamePath};
-                   int res = -1;
-                   if (GlkFactory.startup(glk, args)) {
-                       res = GlkFactory.run();
+                   switch (terpEngineCode) {
+                       case EngineConst.ENGINE_Z_DEFAULT:
+                       case EngineConst.ENGINE_Z_BOCFEL:
+                       case EngineConst.ENGINE_Z_NITFOL:
+                       case EngineConst.ENGINE_Z_FROTZ:
+                           args[0] = "nitfol";
+                           break;
                    }
+
+                   int res = -1;
+                   Log.i(TAG, "[startTerp][engineRun] " + Arrays.toString(args) + " stage1");
+                   if (GlkFactory.startup(glk, args)) {
+                       Log.i(TAG, "[startTerp][engineRun] " + Arrays.toString(args) + " stage2");
+                       res = GlkFactory.run();
+                       Log.i(TAG, "[startTerp][engineRun] " + Arrays.toString(args) + " after, result " + res);
+                   } else {
+                       Log.e(TAG, "[startTerp][engineRun] startup FAILED " + Arrays.toString(args));
+                   }
+
+                   Log.i(TAG, "[startTerp][engineRun] " + Arrays.toString(args) + " post-shutdown");
                    GlkFactory.shutdown();
                    Message m = terp_handler.obtainMessage();
                    m.arg1 = res;
@@ -455,7 +497,12 @@ public class Twisty extends Activity {
                    // same as if it were started fresh, preferable without leaking memory. Since
                    // Glk doesn't specify this functionality, this means we'd need to modify each
                    // library to accommodate this. Reloading the library avoids this issue.
-                   ProcessPhoenix.triggerRebirth(Twisty.this);
+                   if (exitAppAfterEngine) {
+                       Log.e(TAG, "[startTerp][engineRun] calling finish()");
+                       finish();
+                   } else {
+                       ProcessPhoenix.triggerRebirth(Twisty.this);
+                   }
                 }
             });
         terpThread.start();
@@ -974,6 +1021,8 @@ public class Twisty extends Activity {
             ActivityCompat.requestPermissions(this,
                     new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE},
                     MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE);
+        } else {
+            AppInfoSpot.applicationPermissionWriteStorageConfirmed = true;
         }
     }
 
@@ -983,6 +1032,7 @@ public class Twisty extends Activity {
             case MY_PERMISSIONS_REQUEST_WRITE_EXTERNAL_STORAGE: {
                 if(grantResults.length > 0 && grantResults[0] == PackageManager.PERMISSION_GRANTED) {
                     Log.i(TAG, "Write permission granted");
+                    AppInfoSpot.applicationPermissionWriteStorageConfirmed = true;
                 }
                 else {
                     // TODO: do something more user-friendly here. Twisty will currently silently
@@ -992,5 +1042,11 @@ public class Twisty extends Activity {
                 break;
             }
         }
+    }
+
+    @Override
+    public void onBackPressed() {
+        super.onBackPressed();
+        Log.d(TAG, "onBackPressed Twisty activity");
     }
 }
