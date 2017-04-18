@@ -1,7 +1,7 @@
 package com.wakereality.ifengineprovider;
 
 /**
- * Created by adminsag on 4/17/17.
+ * Created by Stephen A. Gutknecht on 4/17/17.
  */
 
 public class AppInfoSpot {

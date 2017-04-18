@@ -11,7 +11,7 @@ import org.greenrobot.eventbus.Subscribe;
 import org.greenrobot.eventbus.ThreadMode;
 
 /**
- * Created by adminsag on 4/17/17.
+ * Created by Stephen A. Gutknecht on 4/17/17.
  */
 
 public class LaunchStoryHelper {

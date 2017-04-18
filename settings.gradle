@@ -1,1 +1,2 @@
-include ':app', ':ifengineprovider'
+include ':app'
+include ':ifengineprovider'

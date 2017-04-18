@@ -10,7 +10,7 @@ import com.wakereality.thunderstrike.dataexchange.EngineConst;
 import org.greenrobot.eventbus.EventBus;
 
 /**
- * Created by adminsag on 4/17/17.
+ * Created by Stephen A. Gutknecht on 4/17/17.
  */
 
 public class EngineLaunchBroadcastReceiver extends BroadcastReceiver {
