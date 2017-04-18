@@ -15,8 +15,12 @@ android {
     }
     buildTypes {
         release {
+            // reference: http://stackoverflow.com/questions/30820915/android-studio-proguard-handling-in-multi-library-projects
+            // consumerProguardFiles 'proguard-project.txt'
+
             minifyEnabled false
-            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            shrinkResources false
+            // proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
 }
